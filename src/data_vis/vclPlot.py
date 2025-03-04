@@ -1,12 +1,21 @@
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import matplotlib.gridspec as gridspec
-from matplotlib import gridspec
+from .helperFunc import nd_crossplot
 
-def vcl_plot(logs, depth_start, depth_end, gr_clean=None, gr_clay=None,
-             neut_clean1=None, den_clean1=None, neut_clean2=None,
-             den_clean2=None, neut_clay=None, den_clay=None,
-             sp_clean=None, sp_clay=None, rhob_axis=[1.5,2.8], nphi_axis=[0,1]):
+
+def vcl_plot(
+    data,
+    depth_start,
+    depth_end,
+    traject1: dict,
+    traject2: dict,
+    traject3: dict,
+    clean_point1=[1, 1],
+    clean_point2=[1, 1],
+    clay_point=[1, 1],
+    rhob_axis=[1.5, 2.8],
+    nphi_axis=[0, 1],
+):
     """
     Plot volume of clay from different methods with handling for missing data
 
@@ -19,107 +28,70 @@ def vcl_plot(logs, depth_start, depth_end, gr_clean=None, gr_clay=None,
     *_clean, *_clay : float, optional
         Clean and clay points for different methods
     """
+    # filter the well depths:
+    well_data = data[(data["DEPT"] >= depth_start) & (data["DEPT"] <= depth_end)]
 
     # Create figure and gridspec
     fig = plt.figure(figsize=(12, 10))
-    fig.suptitle('Volume of clay from different methods', fontsize=14)
+    fig.suptitle("Volume of clay from different methods", fontsize=14)
     fig.subplots_adjust(top=0.90, wspace=0.3, hspace=0.3)
 
-    gs = gridspec.GridSpec(4, 3)
+    gs = gridspec.GridSpec(3, 3)
 
     # Initialize subplots
     ax1 = fig.add_subplot(gs[:, 0])  # All rows, column 1
-    ax2 = fig.add_subplot(gs[0, 1])  # Row 1, column 2
+    ax2 = fig.add_subplot(gs[0, 1])  # Row 1, column 2a
     ax3 = fig.add_subplot(gs[1, 1])  # Row 2, column 2b
-    ax4 = fig.add_subplot(gs[2, 1])  # Row 3, column 2
-    ax5 = fig.add_subplot(gs[3, 1])  # Row 4, column 2
-    ax6 = fig.add_subplot(gs[:, 2], sharey=ax1)  # All rows, column 3
-
-    # Check for depth column
-    depth_col = next((col for col in ['DEPT', 'DEPTH', 'MD'] if col in logs.columns), None)
-    if depth_col is None:
-        raise ValueError("No depth column found in logs")
+    ax4 = fig.add_subplot(gs[2, 1])  # Row 3, column 2c
+    ax5 = fig.add_subplot(gs[:, 2])  # Row all rows, column 3
 
     # Plot GR and SP (if available)
     ax1.invert_yaxis()
     ax1.grid(True)
-    ax1.set_ylabel('DEPTH')
-
-    if 'GR' in logs.columns:
-        ax1.plot(logs.GR, logs[depth_col], color='green')
-        ax1.set_xlabel('GR [api]', color='green')
-
-    if 'SP' in logs.columns:
-        ax11 = ax1.twiny()
-        ax11.plot(logs.SP, logs[depth_col], color='blue')
-        ax11.set_xlabel("SP [mV]", color='blue')
-
-    if ' DR' in logs.columns:
-        ax12 = ax1.twiny()
-        ax12.plot(logs.DR, logs[depth_col], color='purple')
-        ax12.set_xlabel('RT [ohm]', color='purple')
+    ax1.set_ylim(depth_start, depth_end)
+    ax1.set_ylabel("DEPTH")
+    for i in range(len(traject1["data"])):
+        ax1.plot(
+            well_data[traject1["data"][i]], well_data.DEPT, color=traject1["colors"][i]
+        )
+        ax1.set_xlabel(traject1["labels"][i], color=traject1["colors"][i])
+        ax1.set_xlim(traject1["intervals"][i])
+        ax1.set_xscale(traject1["scales"][i])
+        if i < len(traject1["data"]) - 1:
+            ax1 = ax1.twiny()
 
     # Histograms
-    curves_to_plot = {
-        'GR': ('green', ax2, 'GR [api]'),
-        'SP': ('blue', ax3, 'SP [mV]'),
-        'DR': ('gray', ax4, 'DR [m.ohm]')
-    }
-
-    for curve, (color, ax, xlabel) in curves_to_plot.items():
-        if curve in logs.columns:
-            ax.hist(logs[curve].dropna(), bins=15, color=color)
-            ax.set_xlabel(xlabel)
-            ax.set_ylabel('Frequency')
+    axes2 = [ax2, ax3]
+    curves_to_plot = {}
+    for i in range(len(traject2["data"])):
+        curves_to_plot[traject2["data"][i]] = (
+            traject2["colors"][i],
+            axes2[i],
+            traject2["scales"][i],
+            traject2["labels"][i],
+        )
+    for curve, (color, ax, scale, xlabel) in curves_to_plot.items():
+        ax.hist(well_data[curve].dropna(), bins=15, color=color)
+        ax.set_xscale(scale)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("Frequency")
 
     # N-D Crossplot (if both NPHI and RHOB are available)
-    if all(curve in logs.columns for curve in ['NPHI', 'RHOB']):
-        points = ax5.scatter(logs.NPHI, logs.RHOB,
-                           c=logs.GR if 'GR' in logs.columns else 'blue',
-                           s=5, cmap="viridis")
-        cbar = plt.colorbar(points)
-        cbar.set_label('GR [API]', rotation=90, size=5)
-        ax5.set_xlabel('NPHI [%]')
-        ax5.set_ylabel('RHOB [g/cc]')
-        ax5.invert_yaxis()
-        ax5.invert_xaxis()
-        ax5.grid(True)
-
-        # Add axis limits (set constraints here)
-        ax5.set_xlim(nphi_axis)  # Example for NPHI, adjust based on your data
-        ax5.set_ylim(rhob_axis)
-
-        # Plot clean and clay points if provided
-        if all(v is not None for v in [neut_clean1, den_clean1, neut_clean2, den_clean2]):
-            ax5.plot([neut_clean1, neut_clean2], [den_clean1, den_clean2],
-                    marker='o', color='black', linewidth=1)
-            ax5.text(neut_clean1, den_clean1, 'clean point 1', fontsize=6,
-                    bbox=dict(boxstyle="round", fc="white", ec="0.5", alpha=0.8))
-            ax5.text(neut_clean2, den_clean2, 'clean point 2', fontsize=6,
-                    bbox=dict(boxstyle="round", fc="white", ec="0.5", alpha=0.8))
-
-        if neut_clay is not None and den_clay is not None:
-            ax5.plot(neut_clay, den_clay, 'ro', color='black', linewidth=1)
-            ax5.text(neut_clay, den_clay, 'clay point', fontsize=6,
-                    bbox=dict(boxstyle="round", fc="white", ec="0.5", alpha=0.8))
+    nd_crossplot(
+        well_data, ax4, clean_point1, clean_point2, clay_point, nphi_axis, rhob_axis
+    )
 
     # Plot VCL values
-    vcl_curves = {
-        'VCLGR': ('green', 'VCLGR'),
-        'VCLND': ('red', 'VCLND'),
-        'VCLSP': ('blue', 'VCLSP'),
-        'VCLRT': ('purple', 'VCLRT')
-    }
+    vcl_curves = {}
+    for i in range(len(traject3["data"])):
+        vcl_curves[traject3["data"][i]] = (traject3["labels"][i], traject3["colors"][i])
+    for curve, (label, color) in vcl_curves.items():
+        ax5.plot(well_data[curve], well_data.DEPT, label=label, color=color)
 
-    for curve, (color, label) in vcl_curves.items():
-        if curve in logs.columns:
-            ax6.plot(logs[curve], logs[depth_col], label=label, color=color)
+    ax5.legend(loc="best", fontsize="x-small")
+    ax5.set_xlim(0, 1)
+    ax5.set_ylim(depth_start, depth_end)
+    ax5.invert_yaxis()
+    ax5.grid(True)
+    ax5.set_xlabel("VCL [v.v]")
 
-    ax6.legend(loc='best', fontsize='x-small')
-    ax6.set_xlim(0, 1)
-    ax6.set_ylim(depth_start, depth_end)
-    ax6.invert_yaxis()
-    ax6.grid(True)
-    ax6.set_xlabel('VCL [v.v]')
-
-    # return fig
