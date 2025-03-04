@@ -7,7 +7,7 @@ __pycache__/
 # Ignore setup generated dir
 *.egg-info/
 
-data/raw/*.las
+data/raw/*
 results/output1.xlsx
 
 # ignore .ju. files

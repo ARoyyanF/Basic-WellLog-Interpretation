@@ -46,9 +46,8 @@ def vcl_plot(
     ax5 = fig.add_subplot(gs[:, 2])  # Row all rows, column 3
 
     # Plot GR and SP (if available)
-    ax1.invert_yaxis()
-    ax1.grid(True)
     ax1.set_ylim(depth_start, depth_end)
+    ax1.invert_yaxis()
     ax1.set_ylabel("DEPTH")
     for i in range(len(traject1["data"])):
         ax1.plot(
@@ -59,6 +58,7 @@ def vcl_plot(
         ax1.set_xscale(traject1["scales"][i])
         if i < len(traject1["data"]) - 1:
             ax1 = ax1.twiny()
+    ax1.grid(True)
 
     # Histograms
     axes2 = [ax2, ax3]
@@ -82,16 +82,15 @@ def vcl_plot(
     )
 
     # Plot VCL values
+    ax5.set_ylim(depth_start, depth_end)
+    ax5.invert_yaxis()
+    ax5.grid(True)
     vcl_curves = {}
     for i in range(len(traject3["data"])):
         vcl_curves[traject3["data"][i]] = (traject3["labels"][i], traject3["colors"][i])
     for curve, (label, color) in vcl_curves.items():
         ax5.plot(well_data[curve], well_data.DEPT, label=label, color=color)
 
-    ax5.legend(loc="best", fontsize="x-small")
     ax5.set_xlim(0, 1)
-    ax5.set_ylim(depth_start, depth_end)
-    ax5.invert_yaxis()
-    ax5.grid(True)
     ax5.set_xlabel("VCL [v.v]")
-
+    ax5.legend(loc="best", fontsize="x-small")
