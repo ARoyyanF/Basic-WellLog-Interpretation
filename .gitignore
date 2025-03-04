@@ -8,3 +8,7 @@ __pycache__/
 *.egg-info/
 
 data/raw/*.las
+result/output1.xlsx
+
+# ignore .ju. files
+notebook/*.ju.*
