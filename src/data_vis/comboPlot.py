@@ -66,7 +66,15 @@ def combo_plot(
     plt.show()
 
 
-def custom_plot(data, depth_start, depth_end, custom_data, units):
+def custom_plot(
+    data,
+    depth_start,
+    depth_end,
+    custom_data,
+    units,
+    res_range=[0.1, 10],
+    res_scale="log",
+):
     selected_data = data[(data.DEPT >= depth_start) & (data.DEPT <= depth_end)]
     num_tracks = len(custom_data)
     fig, ax = plt.subplots(nrows=1, ncols=num_tracks, figsize=(15, 10), sharey=True)
@@ -100,8 +108,8 @@ def custom_plot(data, depth_start, depth_end, custom_data, units):
             color="C" + str(i),
         )
         if data_name == "DR" or data_name == "MR" or data_name == "SR":
-            current_ax.set_xlim(0.1, 10)
-            current_ax.set_xscale("log")
+            current_ax.set_xlim(res_range)
+            current_ax.set_xscale(res_scale)
         elif data_name == "RW":
             current_ax.set_xlim(0.01, 1)
             current_ax.set_xscale("log")
