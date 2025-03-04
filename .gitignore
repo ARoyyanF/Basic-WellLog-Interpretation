@@ -13,3 +13,5 @@ results/output1.xlsx
 # ignore .ju. files
 notebooks/*.ju.*
 notebooks/BWLI_Mod_v2.ipynb
+
+*.venv/
