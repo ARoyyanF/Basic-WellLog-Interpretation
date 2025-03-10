@@ -94,3 +94,5 @@ def vcl_plot(
     ax5.set_xlim(0, 1)
     ax5.set_xlabel("VCL [v.v]")
     ax5.legend(loc="best", fontsize="x-small")
+
+    return fig

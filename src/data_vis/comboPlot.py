@@ -16,17 +16,20 @@ def combo_plot(
     traject2: dict,
     traject3: dict,
     ticks_interval="auto",
+    with_title=True,
 ):
 
     selected_data = data[(data.DEPT >= top_depth) & (data.DEPT <= bottom_depth)]
     fig, ax = plt.subplots(
         nrows=1, ncols=3, figsize=(12, figure_height), sharey=True
     )  # pembuatan format 1 baris 3 kolom, width 12 height 10, dan sumbu y yang sama (sharey)
-    fig.suptitle(
-        f"WELL COMPOSITE {top_depth}ft to {bottom_depth}ft".upper(),
-        y=suptitleadjust,
-        va="bottom",
-    )
+
+    if with_title:
+        fig.suptitle(
+            f"WELL COMPOSITE {top_depth}ft to {bottom_depth}ft".upper(),
+            y=suptitleadjust,
+            va="bottom",
+        )
     fig.subplots_adjust(wspace=0.1)
 
     # General setting for all axis
@@ -64,6 +67,8 @@ def combo_plot(
         add_trajectory(ax[2], selected_data, traject3)
 
     plt.show()
+
+    return fig
 
 
 def custom_plot(
@@ -120,3 +125,5 @@ def custom_plot(
             loc="lower right", facecolor="white", framealpha=1, fontsize=7
         )
     plt.show()
+
+    return fig
