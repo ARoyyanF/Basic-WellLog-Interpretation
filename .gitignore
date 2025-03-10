@@ -7,8 +7,8 @@ __pycache__/
 # Ignore setup generated dir
 *.egg-info/
 
-data/raw/*
-results/output1.xlsx
+data/raw/*.las
+data/raw/*.pdf
 
 # ignore .ju. files
 notebooks/*.ju.*
