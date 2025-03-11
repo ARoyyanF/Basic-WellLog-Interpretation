@@ -1,5 +1,4 @@
 altair==5.5.0
-ipython==8.31.0
 ipython==8.12.3
 lasio==0.31
 matplotlib==3.10.1

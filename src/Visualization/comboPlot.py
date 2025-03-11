@@ -66,8 +66,6 @@ def combo_plot(
     if traject3:
         add_trajectory(ax[2], selected_data, traject3)
 
-    plt.show()
-
     return fig
 
 
@@ -124,6 +122,5 @@ def custom_plot(
         current_ax.legend(
             loc="lower right", facecolor="white", framealpha=1, fontsize=7
         )
-    plt.show()
 
     return fig

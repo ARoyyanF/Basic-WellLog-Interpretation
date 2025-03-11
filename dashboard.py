@@ -1,7 +1,7 @@
 # local module
-from src.data_vis.comboPlot import combo_plot
-from src.data_vis.vclPlot import vcl_plot
-from src.data_calc.vclCalc import vclgr, vclnd, vclrt
+from numpy import integer
+from src.Components.vclDashboard import vcl_dashboard
+from src.Components.Pages.wellComposite import well_composite
 
 # external libraries
 import streamlit as st
@@ -11,148 +11,91 @@ import os
 current_path = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(current_path, "results/main.csv")
 
+st.title("Log Interpretation Dashboard")
 upload_file = st.file_uploader("Choose csv LAS files")
 
+curve_options = [
+    "GR",
+    "CALI",
+    "SP",
+    "SR",
+    "MR",
+    "DR",
+    "DT",
+    "RHOB",
+    "NPHI",
+    "NPHI_corr",
+]
 
+scale_options = ["linear", "log", "symlog", "logit", "function"]
+color_options = [
+    "#FFD700",  # Gold (Lithology shading)
+    "#90EE90",  # LightGreen (Lithology fill)
+    "#006400",  # DarkGreen (Permeability indicator)
+    "#FFB6C1",  # LightPink (Resistivity background)
+    "#DC143C",  # Crimson (Resistivity curve)
+    "#87CEEB",  # SkyBlue (Pore space)
+    "#4682B4",  # SteelBlue (Pore space data points)
+    "#FFA500",  # Orange (SP curve)
+    "#800080",  # Purple (Water saturation curves)
+    "#A52A2A",  # Brown (Shale indicator)
+    "#D8BFD8",  # Thistle (Background shading)
+]
 if upload_file:
     well_data = pd.read_csv(upload_file)
     min_depth = well_data.DEPT.min()
     max_depth = well_data.DEPT.max()
+
     with st.sidebar:
-        st.text("sidebar")
-        values = st.slider(
-            label="Select Depth Range",
-            min_value=min_depth,
-            max_value=max_depth,
-            value=(min_depth, max_depth),
-        )
-        st.write(f"Depth range: {values[0]} ft to {values[1]} ft")
+        st.title("Control Panel")
 
-        rhob_values = st.slider(
-            label="Select Depth Range",
-            min_value=0,
-            max_value=3,
-            value=(0, 3),
-        )
-        st.write(f"Rhob range: {rhob_values[0]} to {rhob_values[1]}")
+        depth1, depth2 = st.columns(2)
+        with depth1:
+            depth_start = st.number_input(label="Start Depth")
+        with depth2:
+            depth_end = st.number_input(label="End Depth")
+        depths = [depth_start, depth_end]
+        st.write(f"Depth range: {depths[0]} ft to {depths[1]} ft")
 
-    formations = (
-        "Parigi",
-        "Parigi 2nd",
-        "Parigi 3rd",
-        "Parigi 4th",
-        "Preparigi",
-        "Baturaja Onlap",
-        "Baturaja Massive",
-        "Deltaic TAF Top",
-    )
-    formation_depths = (2200, 2700, 2871, 2957, 3052, 7529, 7554, 9049)
-    fig = combo_plot(
-        well_data,
-        values[0],
-        values[1],
-        formations,
-        formation_depths,
-        12,  # figure height in inch
-        1.03,  # title position
-        traject1={
-            "data": ["GR", "CALI"],
-            "intervals": [(0, 100), (0, 20)],
-            "scales": ["linear", "linear"],
-            "labels": ["GR [API]", "CALI [in]"],
-            "positions": [0, 40],
-            "colors": ["green", "orange"],
-        },
-        traject2={
-            "data": ["SR", "DR"],
-            "intervals": [(0, 2), (0, 2)],
-            "scales": ["linear", "linear"],
-            "labels": ["SR [OHM.M]", "DR [OHM.M]"],
-            "positions": [0, 40],
-            "colors": ["purple", "black"],
-        },
-        traject3={
-            "data": ["NPHI", "NPHI_corr", "RHOB"],
-            "intervals": [(1.0, -0.2), (1.0, -0.2), (0, 2.75)],
-            "scales": ["linear", "linear", "linear"],
-            "labels": ["NPHI [unknown]", "NPHI_corr", "RHOB [g/cc]"],
-            "positions": [0, 40, 80],
-            "colors": ["red", "brown", "blue"],
-        },
-        # ticks_interval=[50, 10],
-        with_title=False,
-    )
-
-    # Clean point 1 (typical for a dense, clean rock like limestone)
-    neut_clean1 = 0.1
-    den_clean1 = 2.65
-
-    # Clean point 2 (moderate porosity, consolidated formation)
-    neut_clean2 = 0.35
-    den_clean2 = 2.15
-
-    # Clay point (high density, low porosity)
-    neut_clay = 0.42
-    den_clay = 2.57
-
-    # sand and shale baseline
-    gr_clean = 35
-    gr_clay = 85
-    rt_clean = 2
-    rt_clay = 0.7
-
-    well_data["VCLGR"] = vclgr(well_data.GR, gr_clean, gr_clay, correction="older")
-    well_data["VCLRT"] = vclrt(well_data.DR, rt_clean, rt_clay)
-    well_data["VCLND"] = vclnd(
-        well_data.NPHI,
-        well_data.RHOB,
-        neut_clean1,
-        den_clean1,
-        neut_clean2,
-        den_clean2,
-        neut_clay,
-        den_clay,
-    )
-    fig2 = vcl_plot(
-        well_data,
-        values[0],
-        values[1],
-        traject1={
-            "data": ["GR", "DR"],
-            "intervals": [(0, 100), (0, 2)],
-            "scales": ["linear", "linear"],
-            "labels": ["GR [API]", "DR [OHM.M]"],
-            "colors": ["green", "purple"],
-        },
-        traject2={
-            "data": ["GR", "DR"],
-            "scales": ["linear", "linear"],
-            "labels": ["GR [API]", "DR [OHM.M]"],
-            "colors": ["green", "purple"],
-        },
-        traject3={
-            "data": ["VCLGR", "VCLRT", "VCLND"],
-            "labels": ["VCLGR [v/v]", "VCLRT [v/v]", "VCLND [v/v]"],
-            "colors": ["green", "red", "blue"],
-        },
-        nphi_axis=[0, 1],
-        rhob_axis=[rhob_values[1], rhob_values[0]],
-    )
-
-    (
-        col1,
-        col2,
-    ) = st.columns(2)
+    # create columns
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric(label="Depth Start", value=f"{values[0]} ft")
+        st.metric(label="Depth Start", value=f"{depth_start} ft")
 
     with col2:
-        st.metric(label="Depth End", value=f"{values[1]} ft")
+        st.metric(label="Depth End", value=f"{depth_end} ft")
 
-    tabs1, tabs2 = st.tabs(["Well Composite", "VCL plot"])
+    def page1():
+        well_composite(well_data, depths)
 
-    with tabs1:
-        st.pyplot(fig)
+    def page2():
+        with st.sidebar:
+            rhob_values = st.slider(
+                label="Select Depth Range",
+                min_value=0,
+                max_value=3,
+                value=(0, 3),
+            )
+        st.write(f"Rhob range: {rhob_values[0]} to {rhob_values[1]}")
 
-    with tabs2:
-        st.pyplot(fig2)
+        vcl_dashboard(well_data, depths, rhob_values)
+
+    def page3():
+        st.title("Hello World")
+
+    def page4():
+        st.title("Hello World")
+
+    def page0():
+        st.title("Hello World")
+
+    pg = st.navigation(
+        [
+            st.Page(page0, title="Main Page"),
+            st.Page(page1, title="Well Composites"),
+            st.Page(page2, title="VCL Plot"),
+            st.Page(page3, title="Porosity"),
+            st.Page(page4, title="Water Saturation"),
+        ]
+    )
+    pg.run()
